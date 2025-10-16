@@ -1,4 +1,5 @@
 #implicit deffinitions for gcc and flags
+#make changes here so it can compile using mpicc
 CC = gcc
 CFLAGS = -Wall -03
 CFLAGSDEBUG = -g -Wall -03
@@ -27,3 +28,7 @@ $(src_files) $(header_files):
 #deletes the object files
 clean:
 	rm -f $(object_files)
+
+#make a function that checks if all required libraries are installed
+#it should be able to detect if OPENMP is not installed and print an error message
+#likewise it should be able to detect if OPENMPI is not present and print an error message
