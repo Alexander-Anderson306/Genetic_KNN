@@ -29,7 +29,7 @@ typedef struct Gene {
 //a creature is a collection of genes
 //it contains an array of ints which are the indices of the genes it contains
 typedef struct Creature {
-    int* gene_indices;
+    long* gene_indices;
     int num_genes;
 } Creature;
 

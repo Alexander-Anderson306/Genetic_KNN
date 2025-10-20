@@ -262,46 +262,41 @@ void creature_set(Creature* creature, int num_genes) {
 }
 
 
-void creature_fill(Creature* creature, int num_creatures, Gene* genes, int num_genes) {
+void creature_fill(Creature* creatures, int num_creatures, Gene* genes, int num_genes) {
     //we want each process to have access to all genes
     //if there are not enough creatures to cover every gene, exit
-    if (num_creatures * creature->num_genes < num_genes) {
+    if (num_creatures * creatures->num_genes < num_genes) {
         fprintf(stderr, GENE_CREATURE_ERROR);
         exit(1);
     }
 
-    //fill the creatures with genes
-    //we use a hashmap to keep track of which genes have been assigned
-    //we use this hashmap to pseudo randomly assign an even distribution of individual genes to creatures
+    //fill and scramble method
+    //first we fill the creatures with all the genes in an even distribution
+    int num_genes_per_creature = creatures[0].num_genes;
 
-    int used[num_genes];
-    memset(used, 0, sizeof(used));
-    double average_usage = 0;
+    #pragma omp parallel for
+    for (int i = 0; i < num_creatures; i++) {
+        long local_count = i * num_genes_per_creature;
+        for (int j = 0; j < num_genes_per_creature; j++) {
+            creatures[i].gene_indices[j] = (local_count++) % num_genes;
+        }
+    }
 
-    double percentage_of_one = 1.0 / (num_genes * creature->num_genes);
-
-    //fill the creatures with genes and ensure even distribution
-    //omp should make this faster
-    //this is dumb change it
-    #pragma omp parallel 
-    {
-        int local_seed = seed + omp_get_thread_num();
-        for(int i = 0; i < num_creatures; i++) {
-            for(int j = 0; j < creature->num_genes; j++) {
-                int index = rand_r(&local_seed) % num_genes;
-                while(used[index] >= (average_usage + 1)) {
-                    index = (index + 1) % num_genes;
-                }
-                //assign the index pointer to the creature
-                creature->gene_indices[j] = index;
-                //handle the used count and average usage
-                #pragma omp atomic
-                used[index]++;
-                #pragma omp atomic
-                average_usage += percentage_of_one;
+    //now we scramble the creatures
+    #pragma omp parallel for
+    for (int i = 0; i < num_creatures; i++) {
+        //unique seed for each core
+        int unique_seed = seed + i;
+        //randomly shuffle the gene indices
+        for(int j = 0; j < num_genes_per_creature; j++) {
+            //need to change the random generator to a long
+            long creature_index = 0;
+            int bits = 0;
+            //this generates a random long for the index
+            while (bits < (int)(sizeof(long) * 8)) {
+                creature_index = (unique_seed << 15) ^ rand_r(&unique_seed);
+                bits += 15;
             }
-            //move on to the next creature
-            creature++;
         }
     }
     return (void)0;
@@ -327,20 +322,7 @@ void creature_free(Creature* creature) {
 }
 
 
-/**
- * Tokenizes a buffer and fills the features of a gene.
- *
- * This function takes a buffer and a gene as input and tokenizes the buffer
- * to fill the features of the gene. It first tokenizes the buffer to get the
- * label, then fills the features of the gene by tokenizing the buffer for
- * each feature and setting the feature to the tokenized value. The function
- * then returns the index of the last tokenized value in the buffer.
- *
- * @param buffer The buffer to tokenize.
- * @param gene The gene to fill.
- * @param num_features The number of features to fill for the gene.
- * @return The index of the last tokenized value in the buffer.
- */
+
 int tokfill(char* buffer, Gene* gene, int num_features) {
     //tokenize the buffer
     char* token = strtok(buffer, ",\n");
@@ -348,8 +330,6 @@ int tokfill(char* buffer, Gene* gene, int num_features) {
     gene_set(gene, num_features, token);
     //keep track of the buff index (+1 for the comma)
     int buff_index = strlen(token) + 1;
-
-    //token is null here for some reason... whats wrong?
 
     //fill the features of this gene
     for(int i = 0; i < num_features; i++) {
