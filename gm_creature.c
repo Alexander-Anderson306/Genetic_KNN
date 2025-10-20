@@ -262,10 +262,10 @@ void creature_set(Creature* creature, int num_genes) {
 }
 
 
-void creature_fill(Creature* creatures, int num_creatures, Gene* genes, int num_genes) {
+void creature_fill(Creature* creatures, int num_creatures, Gene* genes, int num_features) {
     //we want each process to have access to all genes
     //if there are not enough creatures to cover every gene, exit
-    if (num_creatures * creatures->num_genes < num_genes) {
+    if (num_creatures * creatures->num_genes < num_features) {
         fprintf(stderr, GENE_CREATURE_ERROR);
         exit(1);
     }
@@ -278,7 +278,7 @@ void creature_fill(Creature* creatures, int num_creatures, Gene* genes, int num_
     for (int i = 0; i < num_creatures; i++) {
         long local_count = i * num_genes_per_creature;
         for (int j = 0; j < num_genes_per_creature; j++) {
-            creatures[i].gene_indices[j] = (local_count++) % num_genes;
+            creatures[i].gene_indices[j] = (local_count++) % num_features;
         }
     }
 
