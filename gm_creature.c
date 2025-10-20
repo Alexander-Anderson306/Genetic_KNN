@@ -262,6 +262,22 @@ void creature_set(Creature* creature, int num_genes) {
 }
 
 
+/**
+ * Fills and scrambles the given creatures with the given genes.
+ *
+ * This function distributes the given genes evenly across the given creatures and
+ * then randomly scrambles the genes for each creature. It takes a pointer to the
+ * creatures, the number of creatures, a pointer to the genes, and the number of
+ * genes as input. It returns void.
+ *
+ * If the number of creatures is not enough to cover all the genes, an error
+ * message is printed and the program exits.
+ *
+ * @param creatures A pointer to the creatures to be filled and scrambled.
+ * @param num_creatures The number of creatures to be filled and scrambled.
+ * @param genes A pointer to the genes to be distributed across the creatures.
+ * @param num_features The number of genes to be distributed across the creatures.
+ */
 void creature_fill(Creature* creatures, int num_creatures, Gene* genes, int num_features) {
     //we want each process to have access to all genes
     //if there are not enough creatures to cover every gene, exit
@@ -289,14 +305,12 @@ void creature_fill(Creature* creatures, int num_creatures, Gene* genes, int num_
         int unique_seed = seed + i;
         //randomly shuffle the gene indices
         for(int j = 0; j < num_genes_per_creature; j++) {
-            //need to change the random generator to a long
-            long creature_index = 0;
-            int bits = 0;
-            //this generates a random long for the index
-            while (bits < (int)(sizeof(long) * 8)) {
-                creature_index = (unique_seed << 15) ^ rand_r(&unique_seed);
-                bits += 15;
-            }
+            //random number
+            int random_index = rand_r(&unique_seed) % num_genes_per_creature;
+            //swap the gene indices
+            int temp = creatures[i].gene_indices[j];
+            creatures[i].gene_indices[j] = creatures[i].gene_indices[random_index];
+            creatures[i].gene_indices[random_index] = temp;
         }
     }
     return (void)0;
@@ -323,6 +337,19 @@ void creature_free(Creature* creature) {
 
 
 
+/**
+ * Tokenizes the buffer and fills the gene with the tokenized values.
+ *
+ * This function tokenizes the input buffer and fills the gene with the
+ * tokenized values. It first tokenizes the label, then fills the features
+ * array with the remaining tokens. The function returns the index of the
+ * buffer after the last tokenized value.
+ *
+ * @param buffer The buffer to tokenize.
+ * @param gene The gene to fill with the tokenized values.
+ * @param num_features The number of features of the gene.
+ * @return The index of the buffer after the last tokenized value.
+ */
 int tokfill(char* buffer, Gene* gene, int num_features) {
     //tokenize the buffer
     char* token = strtok(buffer, ",\n");
