@@ -117,8 +117,21 @@ void gene_set(Gene* gene, int num_features, char* label) {
 //note does not handle the attribute labels
 //TODO make a function to strip the label from the file
 
-//TODO rework this function for the Creature fill function so that we dont have to use multiple reads potentially
-void gene_fill(Gene* gene, char* file_name, int num_genes, int num_features) {
+/**
+ * Fills an array of genes with data from a file.
+ *
+ * This function takes in an array of genes, a file name, the number of genes to fill, and the number of features per gene.
+ * It opens the file and reads it in chunks defined by the buffer size. It then parses the buffer and fills in the genes with the data from the buffer.
+ * The function will exit if there is an error opening the file or if the buffer is too small to hold a line.
+ *
+ * @param genes[] The array of genes to fill.
+ * @param file_name The name of the file to read from.
+ * @param num_genes The number of genes to fill.
+ * @param num_features The number of features per gene.
+ *
+ * This function returns void.
+ */
+void gene_fill(Gene* genes[], char* file_name, int num_genes, int num_features) {
     FILE* file = fopen(file_name, "r");
 
     //check that the file was opened successfully
@@ -153,8 +166,7 @@ void gene_fill(Gene* gene, char* file_name, int num_genes, int num_features) {
 
         //fill the genes with the content from the buffer
         while(buff_index < inc_line_start) {
-            buff_index += tokfill(buffer + buff_index, gene, num_features);
-            gene++;
+            buff_index += tokfill(buffer + buff_index, genes[cur_gene], num_features);
             //move to the next gene
             ++cur_gene;
         }
@@ -168,7 +180,7 @@ void gene_fill(Gene* gene, char* file_name, int num_genes, int num_features) {
 
     //sometimes there is still data in the buffer that needs to be processed
     if (cur_gene < num_genes) {
-        tokfill(buffer, gene, num_features);
+        tokfill(buffer, genes[cur_gene], num_features);
     }
 
     //close the file
@@ -262,39 +274,44 @@ void creature_set(Creature* creature, int num_genes) {
 }
 
 
+
 /**
- * Fills and scrambles the given creatures with the given genes.
+ * Fills the creatures with all the genes in an even distribution, then scrambles them.
  *
- * This function distributes the given genes evenly across the given creatures and
- * then randomly scrambles the genes for each creature. It takes a pointer to the
- * creatures, the number of creatures, a pointer to the genes, and the number of
- * genes as input. It returns void.
+ * This function takes an array of creatures, the number of creatures, an array of genes, and the
+ * number of features as input. It first checks if there are enough creatures to cover every gene,
+ * and if not, it exits with an error message. Then it fills the creatures with all the genes in an
+ * even distribution using OpenMP parallel for loops. Finally, it scrambles the creatures using unique
+ * seeds for each core, also using OpenMP parallel for loops.
  *
- * If the number of creatures is not enough to cover all the genes, an error
- * message is printed and the program exits.
- *
- * @param creatures A pointer to the creatures to be filled and scrambled.
- * @param num_creatures The number of creatures to be filled and scrambled.
- * @param genes A pointer to the genes to be distributed across the creatures.
- * @param num_features The number of genes to be distributed across the creatures.
+ * @param creatures An array of creatures to be filled.
+ * @param num_creatures The number of creatures.
+ * @param genes An array of genes to be distributed.
+ * @param num_features The number of features.
  */
-void creature_fill(Creature* creatures, int num_creatures, Gene* genes, int num_features) {
+void creature_fill(Creature* creatures[], int num_creatures, Gene* genes, int num_features) {
     //we want each process to have access to all genes
     //if there are not enough creatures to cover every gene, exit
-    if (num_creatures * creatures->num_genes < num_features) {
+
+    //get the total number of gene spaces
+    int total_space = 0;
+    for(int i = 0; i < num_creatures; i++) {
+        total_space += creatures[i]->num_genes;
+    }
+
+    if (total_space < num_features) {
         fprintf(stderr, GENE_CREATURE_ERROR);
         exit(1);
     }
 
     //fill and scramble method
     //first we fill the creatures with all the genes in an even distribution
-    int num_genes_per_creature = creatures[0].num_genes;
-
     #pragma omp parallel for
     for (int i = 0; i < num_creatures; i++) {
-        long local_count = i * num_genes_per_creature;
-        for (int j = 0; j < num_genes_per_creature; j++) {
-            creatures[i].gene_indices[j] = (local_count++) % num_features;
+        int num_genes = creatures[i]->num_genes;
+        long local_count = i * num_genes;
+        for (int j = 0; j < num_genes; j++) {
+            creatures[i]->gene_indices[j] = (local_count++) % num_features;
         }
     }
 
@@ -303,14 +320,15 @@ void creature_fill(Creature* creatures, int num_creatures, Gene* genes, int num_
     for (int i = 0; i < num_creatures; i++) {
         //unique seed for each core
         int unique_seed = seed + i;
+        int num_genes = creatures[i]->num_genes;
         //randomly shuffle the gene indices
-        for(int j = 0; j < num_genes_per_creature; j++) {
+        for(int j = 0; j < num_genes; j++) {
             //random number
-            int random_index = rand_r(&unique_seed) % num_genes_per_creature;
+            int random_index = rand_r(&unique_seed) % num_genes;
             //swap the gene indices
-            int temp = creatures[i].gene_indices[j];
-            creatures[i].gene_indices[j] = creatures[i].gene_indices[random_index];
-            creatures[i].gene_indices[random_index] = temp;
+            creatures[i]->gene_indices[j] ^= creatures[i]->gene_indices[random_index];
+            creatures[i]->gene_indices[random_index] ^= creatures[i]->gene_indices[j];
+            creatures[i]->gene_indices[j] ^= creatures[i]->gene_indices[random_index];
         }
     }
     return (void)0;

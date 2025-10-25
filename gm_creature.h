@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omp.h>
-#include <mpi.h>
+//#include <mpi.h>
 #include <stdbool.h>
 
 //a "creature" has 2 levels, the gene level and the creature level
@@ -38,7 +38,7 @@ typedef struct Creature {
 Gene* gene_init();
 void gene_set(Gene* gene, int num_features, char* label);
 //uses omp for large datasets
-void gene_fill(Gene* gene, char* file_name, int num_genes, int num_features);
+void gene_fill(Gene* genes[], char* file_name, int num_genes, int num_features);
 void gene_free(Gene* gene);
 
 
@@ -47,7 +47,7 @@ void gene_free(Gene* gene);
 Creature* creature_init();
 void creature_set(Creature* creature, int num_genes);
 //uses mpi and omp
-void creature_fill(Creature* creatures, int num_creatures, Gene* genes, int num_features);
+void creature_fill(Creature* creatures[], int num_creatures, Gene* genes, int num_features);
 void creature_free(Creature* creature);
 
 //helper function
