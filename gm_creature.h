@@ -12,7 +12,6 @@
 #include <string.h>
 #include <omp.h>
 //#include <mpi.h>
-#include <stdbool.h>
 
 //a "creature" has 2 levels, the gene level and the creature level
 //the gene level are the genes of the creatures (I.E for MNIST, individual digits)
@@ -47,7 +46,7 @@ void gene_free(Gene* gene);
 Creature* creature_init();
 void creature_set(Creature* creature, int num_genes);
 //uses mpi and omp
-void creature_fill(Creature* creatures[], int num_creatures, Gene* genes, int num_features);
+void creature_fill(Creature* creatures[], int num_creatures, int num_genes);
 void creature_free(Creature* creature);
 
 //helper function

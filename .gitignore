@@ -1,6 +1,6 @@
 .vscode/*
-test.c
 *.csv
 generate_test_csv.sh
-test.dSYM
+test.dSYM/*
 test
+test.c

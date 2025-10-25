@@ -124,7 +124,7 @@ void gene_set(Gene* gene, int num_features, char* label) {
  * It opens the file and reads it in chunks defined by the buffer size. It then parses the buffer and fills in the genes with the data from the buffer.
  * The function will exit if there is an error opening the file or if the buffer is too small to hold a line.
  *
- * @param genes[] The array of genes to fill.
+ * @param genes The array of genes to fill.
  * @param file_name The name of the file to read from.
  * @param num_genes The number of genes to fill.
  * @param num_features The number of features per gene.
@@ -141,6 +141,10 @@ void gene_fill(Gene* genes[], char* file_name, int num_genes, int num_features) 
     }
 
     char* buffer = (char*)malloc(BUFF_SIZE * sizeof(char));
+    if(buffer == NULL) {
+        fprintf(stderr, MALLOC_ERROR);
+        exit(1);
+    }
     int copied_data_index = 0;
     //index of the current gene being worked on
     int cur_gene = 0;
@@ -246,10 +250,6 @@ Creature* creature_init() {
 /**
  * Sets the number of genes for a creature.
  *
- * This function sets the number of genes for a given creature. It takes a
- * creature and the number of genes as input and sets the number of genes
- * for the creature.
- *
  * @param creature The creature for which to set the number of genes.
  * @param num_genes The number of genes to set for the creature.
  */
@@ -286,51 +286,63 @@ void creature_set(Creature* creature, int num_genes) {
  *
  * @param creatures An array of creatures to be filled.
  * @param num_creatures The number of creatures.
- * @param genes An array of genes to be distributed.
- * @param num_features The number of features.
+ * @param num_genes The number of genes in the global genes array.
  */
-void creature_fill(Creature* creatures[], int num_creatures, Gene* genes, int num_features) {
-    //we want each process to have access to all genes
-    //if there are not enough creatures to cover every gene, exit
+void creature_fill(Creature* creatures[], int num_creatures, int num_genes) {
+    //not all genes are getting pointers for some reason
+    //also memory leak somewhere somehow
+    #pragma omp parallel
+    {
+        //check if there are enough creatures to cover every gene
+        int total_space = 0;
 
-    //get the total number of gene spaces
-    int total_space = 0;
-    for(int i = 0; i < num_creatures; i++) {
-        total_space += creatures[i]->num_genes;
-    }
+        #pragma omp parallel for reduction(+:total_space)
+        for (int i = 0; i < num_creatures; i++) {
+            total_space += creatures[i]->num_genes;
+        }
 
-    if (total_space < num_features) {
-        fprintf(stderr, GENE_CREATURE_ERROR);
-        exit(1);
-    }
+        // Only one thread checks and prints
+        #pragma omp single
+        {
+            if (total_space < num_genes) {
+                fprintf(stderr, GENE_CREATURE_ERROR);
+                exit(1);
+            }
+        }
 
-    //fill and scramble method
-    //first we fill the creatures with all the genes in an even distribution
-    #pragma omp parallel for
-    for (int i = 0; i < num_creatures; i++) {
-        int num_genes = creatures[i]->num_genes;
-        long local_count = i * num_genes;
-        for (int j = 0; j < num_genes; j++) {
-            creatures[i]->gene_indices[j] = (local_count++) % num_features;
+        #pragma omp barrier
+
+        //first we fill the creatures with all the genes in an even distribution
+        int local_count = (num_genes/num_creatures) * omp_get_thread_num();
+        #pragma omp for
+        for (int i = 0; i < num_creatures; i++) {
+            int local_num_genes = creatures[i]->num_genes;
+            for (int j = 0; j < local_num_genes; j++) {
+                creatures[i]->gene_indices[j] = (local_count++) % num_genes;
+            }
+        }
+
+        //the first loop must finish before the second loop
+        #pragma omp barrier
+
+        //now we scramble the creatures
+        #pragma omp for
+        for (int i = 0; i < num_creatures; i++) {
+            unsigned int unique_seed = seed + i;
+            int local_num_genes = creatures[i]->num_genes;
+
+            for (int j = 0; j < local_num_genes; j++) {
+                int random_creature = rand_r(&unique_seed) % num_creatures;
+                int random_index = rand_r(&unique_seed) % creatures[random_creature]->num_genes;
+
+                //swap
+                creatures[i]->gene_indices[j] ^= creatures[random_creature]->gene_indices[random_index];
+                creatures[random_creature]->gene_indices[random_index] ^= creatures[i]->gene_indices[j];
+                creatures[i]->gene_indices[j] ^= creatures[random_creature]->gene_indices[random_index];
+            }
         }
     }
 
-    //now we scramble the creatures
-    #pragma omp parallel for
-    for (int i = 0; i < num_creatures; i++) {
-        //unique seed for each core
-        int unique_seed = seed + i;
-        int num_genes = creatures[i]->num_genes;
-        //randomly shuffle the gene indices
-        for(int j = 0; j < num_genes; j++) {
-            //random number
-            int random_index = rand_r(&unique_seed) % num_genes;
-            //swap the gene indices
-            creatures[i]->gene_indices[j] ^= creatures[i]->gene_indices[random_index];
-            creatures[i]->gene_indices[random_index] ^= creatures[i]->gene_indices[j];
-            creatures[i]->gene_indices[j] ^= creatures[i]->gene_indices[random_index];
-        }
-    }
     return (void)0;
 }
 
