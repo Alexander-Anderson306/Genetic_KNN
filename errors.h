@@ -9,6 +9,7 @@
 
 #define MALLOC_ERROR "Failed to allocate memory\n"
 #define FILE_ERROR "Failed to open file\n"
+#define EMPTY_FILE_ERROR "File is empty\n"
 #define BUFF_ERROR "Buffer too small to hold line.\n Set BUFF_SIZE to a larger value when compiling using -D BUFF_SIZE=<value>\n"
 #define GENE_CREATURE_ERROR "Not enough creatures to hold all genes\n"
 

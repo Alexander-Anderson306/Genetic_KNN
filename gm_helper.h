@@ -5,10 +5,17 @@
 #include <string.h>
 #include <omp.h>
 
+typedef struct attributes_t {
+    int num_attributes;
+    char** attributes;
+} attributes_t;
+
 size_t get_attribute_size(char* filename);
 
 int get_num_attributes(char* filename);
 
-int get_attributes(char* filename, char** attributes);
+void get_attributes(char* filename, attributes_t* attributes);
+
+void free_attributes(attributes_t* attributes);
 
 #endif

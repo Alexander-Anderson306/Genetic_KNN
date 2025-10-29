@@ -98,9 +98,6 @@ void gene_set(Gene* gene, int num_features, char* label) {
 }
 
 
-//note does not handle the attribute labels
-//TODO make a function to strip the label from the file
-
 /**
  * Fills an array of genes with data from a file.
  *
@@ -132,6 +129,10 @@ void gene_fill(Gene* genes[], char* file_name, int num_genes, int num_features) 
     int copied_data_index = 0;
     //index of the current gene being worked on
     int cur_gene = 0;
+
+    //skip over the attributes line
+    size_t att_size = get_attribute_size(file_name);
+    fseek(file, att_size, SEEK_SET);
 
     //read until the end of the file
     while (fread(buffer + copied_data_index, sizeof(char), BUFF_SIZE - copied_data_index, file) != 0 && cur_gene < num_genes) {
@@ -183,9 +184,6 @@ void gene_fill(Gene* genes[], char* file_name, int num_genes, int num_features) 
 
 /**
  * Frees a gene and its associated memory.
- *
- * This function takes a gene as input and frees the memory associated with
- * the gene's features and label. It then frees the gene itself.
  *
  * @param gene The gene to be freed.
  */
