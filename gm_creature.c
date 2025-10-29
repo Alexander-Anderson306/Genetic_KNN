@@ -313,7 +313,7 @@ void creature_fill(Creature* creatures[], int num_creatures, int num_genes) {
         #pragma omp barrier
 
         //first we fill the creatures with all the genes in an even distribution
-        int local_count = (num_genes/num_creatures) * omp_get_thread_num();
+        int local_count = (num_genes / omp_get_num_threads()) * omp_get_thread_num();
         #pragma omp for
         for (int i = 0; i < num_creatures; i++) {
             int local_num_genes = creatures[i]->num_genes;
