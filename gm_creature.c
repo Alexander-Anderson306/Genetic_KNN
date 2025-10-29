@@ -1,12 +1,10 @@
 #include "gm_creature.h"
-#define MAX_LABEL_LENGTH 16
 
 //this lets the Make file specify the size of the file reading buffer
 #ifndef BUFF_SIZE
     #define BUFF_SIZE (32 * 1024) 
     //32KB (make cool feature to get optimal size based on num features later)
 #endif
-#define LABEL_ERROR "Label too long\n"
 #define MALLOC_ERROR "Failed to allocate memory\n"
 #define FILE_ERROR "Failed to open file\n"
 #define BUFF_ERROR "Buffer too small to hold line.\n Set BUFF_SIZE to a larger value when compiling using -D BUFF_SIZE=<value>\n"
@@ -91,18 +89,12 @@ void gene_set(Gene* gene, int num_features, char* label) {
 
     //if the label is NULL allocate memory for the label
     if (gene->label == NULL) {
-        gene->label = (char*)malloc(MAX_LABEL_LENGTH * sizeof(char));   
+        gene->label = (char*)malloc(strlen(label) * sizeof(char));   
     }
 
     //check that the allocation was successful
     if (gene->label == NULL) {
         fprintf(stderr, MALLOC_ERROR);
-        exit(1);
-    }
-
-    //check that the label does not exceed the maximum length
-    if (strlen(label) >= MAX_LABEL_LENGTH) {
-        fprintf(stderr, LABEL_ERROR);
         exit(1);
     }
 
