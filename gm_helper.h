@@ -18,4 +18,8 @@ void get_attributes(char* filename, attributes_t* attributes);
 
 void free_attributes(attributes_t* attributes);
 
+double accuracy(Creature* creatures, Creature* test_creatures, int num_creatures, int num_test_creatures);
+
+void nth_element(double* array, int length, int n);
+
 #endif

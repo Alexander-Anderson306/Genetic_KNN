@@ -118,3 +118,81 @@ void free_attributes(attributes_t* attributes) {
     free(attributes->attributes);
     return (void)0;
 }
+
+void swap(double* a, double* b) {
+    double swap = *a;
+    *a = *b;
+    *b = swap; 
+}
+
+int select_pivot(double* array, int low, int high) {
+    int middle = low + (high - low) / 2;
+    double p1 = array[low];
+    double p2 = array[middle];
+    double p3 = array[high];
+
+    if ((p1 <= p2 && p2 <= p3) || (p3 <= p2 && p2 <= p1)) {
+        return middle;
+    } else if ((p2 <= p1 && p1 <= p3) || (p3 <= p1 && p1 <= p2)) {
+        return low;
+    } else {
+        return high;
+    }
+}
+
+/**
+ * Partitions the array such that the pivot element ends up in its correct place.
+ * All elements to the left of the pivot are less than the pivot, and all elements to
+ * the right of the pivot are greater than the pivot.
+ *
+ * @param array The array to partition.
+ * @param low The index of the first element of the sub-array to partition.
+ * @param high The index of the last element of the sub-array to partition.
+ *
+ * @return The index of the pivot element after partitioning.
+ */
+int partition(double* array, int low, int high) {
+    //select pivot
+    int pivot_index = select_pivot(array, low, high);
+    double pivot = array[pivot_index];
+
+    //swap pivot with the last element
+    swap(&array[high], &array[pivot_index]);
+
+    //lomuto partition (so pivot ends up in the correct place)
+    int i = low - 1;
+    for (int j = low; j < high; j++) {
+        if (array[j] < pivot) {
+            i++;
+            swap(&array[i], &array[j]);
+        }
+    }
+    //swap pivot with the correct place
+    swap(&array[i + 1], &array[high]);
+    return i + 1;
+}
+
+
+/**
+ * Sorts the array such that all elements to the left of the nth element are less than the nth element,
+ * and all elements to the right of the nth element are greater than the nth element.
+ *
+ *
+ * @param array The array to sort.
+ * @param length The length of the array.
+ * @param n The index of the nth element.
+ */
+void nth_element(double* array, int length, int n) {
+    int low = 0;
+    int high = length - 1;
+    while (low <= high) {
+        int pivot = partition(array, low, high);
+        if (pivot == n) {
+            return;
+        } else if (pivot < n) {
+            low = pivot + 1;
+        } else {
+            high = pivot - 1;
+        }
+    }
+}
