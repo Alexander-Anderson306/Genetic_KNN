@@ -119,18 +119,17 @@ void free_attributes(attributes_t* attributes) {
     return (void)0;
 }
 
-void swap(double* a, double* b) {
-    double swap = *a;
+void swap(distance_intex_t* a, distance_intex_t* b) {
+    distance_intex_t swap = *a;
     *a = *b;
     *b = swap; 
 }
 
-int select_pivot(double* array, int low, int high) {
+int select_pivot(distance_intex_t* distance_intex_t, int low, int high) {
     int middle = low + (high - low) / 2;
-    double p1 = array[low];
-    double p2 = array[middle];
-    double p3 = array[high];
-
+    double p1 = distance_intex_t[low].distance;
+    double p2 = distance_intex_t[middle].distance;
+    double p3 = distance_intex_t[high].distance;
     if ((p1 <= p2 && p2 <= p3) || (p3 <= p2 && p2 <= p1)) {
         return middle;
     } else if ((p2 <= p1 && p1 <= p3) || (p3 <= p1 && p1 <= p2)) {
@@ -145,30 +144,29 @@ int select_pivot(double* array, int low, int high) {
  * All elements to the left of the pivot are less than the pivot, and all elements to
  * the right of the pivot are greater than the pivot.
  *
- * @param array The array to partition.
+ * @param distance_index the distance type array to be partitioned.
  * @param low The index of the first element of the sub-array to partition.
  * @param high The index of the last element of the sub-array to partition.
  *
  * @return The index of the pivot element after partitioning.
  */
-int partition(double* array, int low, int high) {
+int partition(distance_intex_t* distance_index, int low, int high) {
     //select pivot
-    int pivot_index = select_pivot(array, low, high);
-    double pivot = array[pivot_index];
-
+    int pivot_index = select_pivot(distance_index, low, high);
+    double pivot = distance_index[pivot_index].distance;
     //swap pivot with the last element
-    swap(&array[high], &array[pivot_index]);
+    swap(&distance_index[high], &distance_index[pivot_index]);
 
     //lomuto partition (so pivot ends up in the correct place)
     int i = low - 1;
     for (int j = low; j < high; j++) {
-        if (array[j] < pivot) {
+        if (distance_index[j].distance < pivot) {
             i++;
-            swap(&array[i], &array[j]);
+            swap(&distance_index[i], &distance_index[j]);
         }
     }
     //swap pivot with the correct place
-    swap(&array[i + 1], &array[high]);
+    swap(&distance_index[i + 1], &distance_index[high]);
     return i + 1;
 }
 
@@ -178,15 +176,15 @@ int partition(double* array, int low, int high) {
  * and all elements to the right of the nth element are greater than the nth element.
  *
  *
- * @param array The array to sort.
+ * @param distance_index The array to sort.
  * @param length The length of the array.
  * @param n The index of the nth element.
  */
-void nth_element(double* array, int length, int n) {
+void nth_element(distance_intex_t* distance_index, int length, int n) {
     int low = 0;
     int high = length - 1;
     while (low <= high) {
-        int pivot = partition(array, low, high);
+        int pivot = partition(distance_index, low, high);
         if (pivot == n) {
             return;
         } else if (pivot < n) {

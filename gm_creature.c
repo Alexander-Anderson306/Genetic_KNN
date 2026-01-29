@@ -271,8 +271,6 @@ void creature_set(Creature* creature, int num_genes) {
  * @param num_genes The number of genes in the global genes array.
  */
 void creature_fill(Creature* creatures[], int num_creatures, int num_genes) {
-    //not all genes are getting pointers for some reason
-    //also memory leak somewhere somehow
     #pragma omp parallel
     {
         //check if there are enough creatures to cover every gene
